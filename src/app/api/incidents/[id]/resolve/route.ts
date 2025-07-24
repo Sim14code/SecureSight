@@ -1,21 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const id = Number(params.id);
+  const id = Number(context.params.id);
   if (isNaN(id)) {
-    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
 
-  // Get current resolved status
   const incident = await prisma.incident.findUnique({ where: { id } });
   if (!incident) {
-    return NextResponse.json({ error: 'Incident not found' }, { status: 404 });
+    return NextResponse.json({ error: "Incident not found" }, { status: 404 });
   }
 
   const updated = await prisma.incident.update({
@@ -23,5 +22,6 @@ export async function PATCH(
     data: { resolved: !incident.resolved },
     include: { camera: true },
   });
+
   return NextResponse.json(updated);
 }

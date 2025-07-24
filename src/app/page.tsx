@@ -16,7 +16,6 @@ import {
   Eye,
   Clock,
   CheckCircle,
-  XCircle,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -54,13 +53,13 @@ const SecurityDashboard = () => {
   const [activeCamera, setActiveCamera] = useState("");
   const [isPlaying, setIsPlaying] = useState(true);
   const [incidents, setIncidents] = useState<IncidentType[]>([]);
-  const [resolvedCount, setResolvedCount] = useState(0);
   const [cameras, setCameras] = useState<CameraType[]>([]);
   const [fadingIncidents, setFadingIncidents] = useState<number[]>([]);
   const [activeSection, setActiveSection] = useState("Dashboard");
   const [resolvedIncidents, setResolvedIncidents] = useState<IncidentType[]>(
     []
   );
+
   const [mounted, setMounted] = useState(false); // Add this
 
   useEffect(() => {
@@ -84,7 +83,6 @@ const SecurityDashboard = () => {
       .then((res) => res.json())
       .then((data) => {
         setResolvedIncidents(data);
-        setResolvedCount(data.length);
       });
     // Fetch cameras (from incidents for now)
     fetch("/api/incidents")
@@ -108,7 +106,7 @@ const SecurityDashboard = () => {
       setFadingIncidents((prev) => prev.filter((fid) => fid !== id));
       fetch("/api/incidents?resolved=true")
         .then((res) => res.json())
-        .then((data) => setResolvedCount(data.length));
+        .then((data) => setResolvedIncidents(data));
     }, 400);
   };
 
@@ -118,7 +116,7 @@ const SecurityDashboard = () => {
     active = false,
     onClick,
   }: {
-    icon: any;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
     label: string;
     active?: boolean;
     onClick?: () => void;
@@ -137,7 +135,10 @@ const SecurityDashboard = () => {
   );
 
   const IncidentCard = ({ incident }: { incident: IncidentType }) => {
-    const IconComponent = (ICONS as Record<string, any>)[incident.type] || Eye;
+    const IconComponent: React.ComponentType<{
+      size?: number;
+      className?: string;
+    }> = ICONS[incident.type as keyof typeof ICONS] ?? Eye;
     const isFading = fadingIncidents.includes(incident.id);
     return (
       <div
@@ -575,5 +576,40 @@ const SecurityDashboard = () => {
     </div>
   );
 };
+
+export function Card({
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className="bg-white rounded shadow border" {...props}>
+      {children}
+    </div>
+  );
+}
+
+export function CardContent({
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return <div {...props}>{children}</div>;
+}
+
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "default" | "outline";
+};
+
+export function Button({
+  variant = "default",
+  className = "",
+  ...props
+}: ButtonProps) {
+  const base =
+    "px-4 py-2 rounded font-semibold transition " +
+    (variant === "outline"
+      ? "border border-gray-400 bg-transparent text-gray-800"
+      : "bg-blue-600 text-white hover:bg-blue-700");
+  return <button className={`${base} ${className}`} {...props} />;
+}
 
 export default SecurityDashboard;
