@@ -23,4 +23,31 @@ export default function Clock() {
 
   // Only render the time on the client
   return <span>{time || "--:--:-- --"}</span>;
-} 
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Camera {
+  id       Int      @id @default(autoincrement())
+  name     String
+  location String
+  incidents Incident[]
+}
+
+model Incident {
+  id          Int      @id @default(autoincrement())
+  cameraId    Int
+  type        String
+  tsStart     DateTime
+  tsEnd       DateTime
+  thumbnailUrl String
+  resolved    Boolean  @default(false)
+  camera      Camera   @relation(fields: [cameraId], references: [id])
+}

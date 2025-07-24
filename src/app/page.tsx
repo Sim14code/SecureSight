@@ -1,11 +1,11 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Camera as CameraIcon, 
-  MapPin, 
-  AlertTriangle, 
-  Users, 
+import React, { useState, useEffect } from "react";
+import {
+  LayoutDashboard,
+  Camera as CameraIcon,
+  MapPin,
+  AlertTriangle,
+  Users,
   ChevronDown,
   Play,
   Pause,
@@ -16,13 +16,13 @@ import {
   Eye,
   Clock,
   CheckCircle,
-  XCircle
-} from 'lucide-react';
-import Image from 'next/image';
+  XCircle,
+} from "lucide-react";
+import Image from "next/image";
 
 const ICONS = {
-  'Unauthorized Access': Shield,
-  'Gun Threat': Target,
+  "Unauthorized Access": Shield,
+  "Gun Threat": Target,
 };
 
 type CameraType = {
@@ -58,39 +58,44 @@ const SecurityDashboard = () => {
   const [cameras, setCameras] = useState<CameraType[]>([]);
   const [fadingIncidents, setFadingIncidents] = useState<number[]>([]);
   const [activeSection, setActiveSection] = useState("Dashboard");
-  const [resolvedIncidents, setResolvedIncidents] = useState<IncidentType[]>([]);
+  const [resolvedIncidents, setResolvedIncidents] = useState<IncidentType[]>(
+    []
+  );
+  const [mounted, setMounted] = useState(false); // Add this
 
   useEffect(() => {
+    setMounted(true); // Set mounted to true after client mount
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   // Fetch incidents and cameras
   useEffect(() => {
-    fetch('/api/incidents?resolved=false')
-      .then(res => res.json())
-      .then(data => {
+    fetch("/api/incidents?resolved=false")
+      .then((res) => res.json())
+      .then((data) => {
         setIncidents(data);
         if (data.length > 0 && !activeCamera) {
           setActiveCamera(data[0].camera.name);
         }
       });
     // Fetch resolved incidents
-    fetch('/api/incidents?resolved=true')
-      .then(res => res.json())
-      .then(data => {
+    fetch("/api/incidents?resolved=true")
+      .then((res) => res.json())
+      .then((data) => {
         setResolvedIncidents(data);
         setResolvedCount(data.length);
       });
     // Fetch cameras (from incidents for now)
-    fetch('/api/incidents')
-      .then(res => res.json())
-      .then(data => {
-        const uniqueCams = Array.from(new Set<string>(data.map((i: IncidentType) => i.camera.name)))
-          .map((name) => {
-            const cam = data.find((i: IncidentType) => i.camera.name === name);
-            return { id: cam.camera.id, name: cam.camera.name, status: 'active' };
-          });
+    fetch("/api/incidents")
+      .then((res) => res.json())
+      .then((data) => {
+        const uniqueCams = Array.from(
+          new Set<string>(data.map((i: IncidentType) => i.camera.name))
+        ).map((name) => {
+          const cam = data.find((i: IncidentType) => i.camera.name === name);
+          return { id: cam.camera.id, name: cam.camera.name, status: "active" };
+        });
         setCameras(uniqueCams);
       });
   }, [activeCamera]);
@@ -98,16 +103,26 @@ const SecurityDashboard = () => {
   const handleResolve = async (id: number) => {
     setFadingIncidents((prev) => [...prev, id]);
     setTimeout(async () => {
-      await fetch(`/api/incidents/${id}/resolve`, { method: 'PATCH' });
+      await fetch(`/api/incidents/${id}/resolve`, { method: "PATCH" });
       setIncidents((prev) => prev.filter((i) => i.id !== id));
       setFadingIncidents((prev) => prev.filter((fid) => fid !== id));
-      fetch('/api/incidents?resolved=true')
-        .then(res => res.json())
-        .then(data => setResolvedCount(data.length));
+      fetch("/api/incidents?resolved=true")
+        .then((res) => res.json())
+        .then((data) => setResolvedCount(data.length));
     }, 400);
   };
 
-  const NavItem = ({ icon: Icon, label, active = false, onClick }: { icon: any; label: string; active?: boolean; onClick?: () => void }) => (
+  const NavItem = ({
+    icon: Icon,
+    label,
+    active = false,
+    onClick,
+  }: {
+    icon: any;
+    label: string;
+    active?: boolean;
+    onClick?: () => void;
+  }) => (
     <div
       className={`flex items-center px-4 py-3 cursor-pointer transition-all duration-200 ${
         active
@@ -125,25 +140,43 @@ const SecurityDashboard = () => {
     const IconComponent = (ICONS as Record<string, any>)[incident.type] || Eye;
     const isFading = fadingIncidents.includes(incident.id);
     return (
-      <div className={`bg-gray-800 rounded-lg p-4 mb-3 border-l-4 border-orange-500 transition-opacity duration-300 ${isFading ? 'opacity-30' : 'opacity-100'}`}>
+      <div
+        className={`bg-gray-800 rounded-lg p-4 mb-3 border-l-4 border-orange-500 transition-opacity duration-300 ${
+          isFading ? "opacity-30" : "opacity-100"
+        }`}
+      >
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3">
-            <Image src={incident.thumbnailUrl || '/file.svg'} alt="Incident thumbnail" width={60} height={40} className="rounded object-cover" />
+            <Image
+              src={incident.thumbnailUrl || "/file.svg"}
+              alt="Incident thumbnail"
+              width={60}
+              height={40}
+              className="rounded object-cover"
+            />
             <div>
               <div className="flex items-center space-x-2">
                 <div className="bg-orange-500 p-2 rounded-lg">
                   <IconComponent size={16} className="text-white" />
                 </div>
-                <h4 className="text-orange-400 font-semibold text-sm">{incident.type}</h4>
+                <h4 className="text-orange-400 font-semibold text-sm">
+                  {incident.type}
+                </h4>
               </div>
-              <p className="text-gray-300 text-xs mt-1">{incident.camera.name}</p>
+              <p className="text-gray-300 text-xs mt-1">
+                {incident.camera.name}
+              </p>
               <p className="text-gray-400 text-xs mt-1 flex items-center">
                 <Clock size={12} className="mr-1" />
                 {formatIncidentTime(incident.tsStart, incident.tsEnd)}
               </p>
             </div>
           </div>
-          <button className="text-yellow-400 text-sm font-medium hover:text-yellow-300" onClick={() => handleResolve(incident.id)} disabled={isFading}>
+          <button
+            className="text-yellow-400 text-sm font-medium hover:text-yellow-300"
+            onClick={() => handleResolve(incident.id)}
+            disabled={isFading}
+          >
             Resolve →
           </button>
         </div>
@@ -154,17 +187,26 @@ const SecurityDashboard = () => {
   function formatIncidentTime(tsStart: string, tsEnd: string) {
     const start = new Date(tsStart);
     const end = new Date(tsEnd);
-    return `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')} - ${end.getHours()}:${end.getMinutes().toString().padStart(2, '0')} on ${start.getDate()}-${start.toLocaleString('default', { month: 'short' })}-${start.getFullYear()}`;
+    return `${start.getHours()}:${start
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")} - ${end.getHours()}:${end
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")} on ${start.getDate()}-${start.toLocaleString(
+      "default",
+      { month: "short" }
+    )}-${start.getFullYear()}`;
   }
 
   // Helper to get a video URL for a camera name (demo)
   function getCameraVideoUrl(cameraName: string) {
     // Map camera names to sample video URLs (replace with real URLs as needed)
-    if (cameraName.includes('Shop Floor')) return '/sample1.mp4';
-    if (cameraName.includes('Vault')) return '/sample2.mp4';
-    if (cameraName.includes('Entrance')) return '/sample3.mp4';
-    if (cameraName.includes('Back Alley')) return '/sample4.mp4';
-    return '';
+    if (cameraName.includes("Shop Floor")) return "/sample1.mp4";
+    if (cameraName.includes("Vault")) return "/sample2.mp4";
+    if (cameraName.includes("Entrance")) return "/sample3.mp4";
+    if (cameraName.includes("Back Alley")) return "/sample4.mp4";
+    return "";
   }
 
   return (
@@ -190,7 +232,7 @@ const SecurityDashboard = () => {
         </nav>
         <div className="flex items-center space-x-3">
           <div className="text-sm text-blue-200">
-            {currentTime.toLocaleTimeString()}
+            {mounted ? currentTime.toLocaleTimeString() : "--:--:--"}
           </div>
           <div className="flex items-center space-x-2 bg-blue-700 px-3 py-2 rounded-lg">
             <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -214,7 +256,7 @@ const SecurityDashboard = () => {
                   📅 11/7/2025 - 03:12:37
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button 
+                  <button
                     onClick={() => setIsPlaying(!isPlaying)}
                     className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition-colors"
                   >
@@ -239,17 +281,29 @@ const SecurityDashboard = () => {
                       loop
                       muted
                       className="w-full h-full object-cover rounded-lg"
-                      style={{ maxHeight: '400px', background: '#222' }}
+                      style={{ maxHeight: "400px", background: "#222" }}
                     />
                   ) : (
-                    <Image src="/globe.svg" alt="Main Camera" fill style={{objectFit:'cover', opacity:0.7}} />
+                    <Image
+                      src="/globe.svg"
+                      alt="Main Camera"
+                      fill
+                      style={{ objectFit: "cover", opacity: 0.7 }}
+                    />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-gray-900/40"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <CameraIcon size={48} className="mx-auto mb-4 text-gray-400" />
-                      <div className="text-4xl font-bold text-white mb-2">MANDATORY</div>
-                      <div className="text-lg text-gray-300">Live Feed - {activeCamera}</div>
+                      <CameraIcon
+                        size={48}
+                        className="mx-auto mb-4 text-gray-400"
+                      />
+                      <div className="text-4xl font-bold text-white mb-2">
+                        MANDATORY
+                      </div>
+                      <div className="text-lg text-gray-300">
+                        Live Feed - {activeCamera}
+                      </div>
                     </div>
                   </div>
                   {/* Camera Label */}
@@ -266,20 +320,35 @@ const SecurityDashboard = () => {
                 </div>
                 {/* Mini Camera Strip */}
                 <div className="flex gap-3 mb-4">
-                  {cameras.filter(cam => cam.name !== activeCamera).slice(0,2).map((camera) => (
-                    <div key={camera.id} className="relative w-24 h-16 rounded overflow-hidden border-2 border-gray-700">
-                      <Image src="/vercel.svg" alt={camera.name} fill style={{objectFit:'cover', opacity:0.8}} />
-                      <div className="absolute bottom-1 left-1 bg-black/70 px-2 py-0.5 rounded text-xs">{camera.name}</div>
-                    </div>
-                  ))}
+                  {cameras
+                    .filter((cam) => cam.name !== activeCamera)
+                    .slice(0, 2)
+                    .map((camera) => (
+                      <div
+                        key={camera.id}
+                        className="relative w-24 h-16 rounded overflow-hidden border-2 border-gray-700"
+                      >
+                        <Image
+                          src="/vercel.svg"
+                          alt={camera.name}
+                          fill
+                          style={{ objectFit: "cover", opacity: 0.8 }}
+                        />
+                        <div className="absolute bottom-1 left-1 bg-black/70 px-2 py-0.5 rounded text-xs">
+                          {camera.name}
+                        </div>
+                      </div>
+                    ))}
                 </div>
                 {/* Camera Grid */}
                 <div className="grid grid-cols-4 gap-3">
                   {cameras.map((camera) => (
-                    <div 
+                    <div
                       key={camera.id}
                       className={`bg-gray-700 rounded-lg aspect-video relative cursor-pointer transition-all duration-200 ${
-                        activeCamera === camera.name ? 'ring-2 ring-blue-500' : 'hover:bg-gray-600'
+                        activeCamera === camera.name
+                          ? "ring-2 ring-blue-500"
+                          : "hover:bg-gray-600"
                       }`}
                       onClick={() => setActiveCamera(camera.name)}
                     >
@@ -288,7 +357,13 @@ const SecurityDashboard = () => {
                         {camera.name}
                       </div>
                       <div className="absolute top-2 right-2">
-                        <div className={`w-2 h-2 rounded-full ${camera.status === 'active' ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            camera.status === "active"
+                              ? "bg-green-400"
+                              : "bg-red-400"
+                          }`}
+                        ></div>
                       </div>
                     </div>
                   ))}
@@ -303,7 +378,7 @@ const SecurityDashboard = () => {
                   📅 11/7/2025 - 03:12:37
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button 
+                  <button
                     onClick={() => setIsPlaying(!isPlaying)}
                     className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition-colors"
                   >
@@ -328,17 +403,29 @@ const SecurityDashboard = () => {
                       loop
                       muted
                       className="w-full h-full object-cover rounded-lg"
-                      style={{ maxHeight: '400px', background: '#222' }}
+                      style={{ maxHeight: "400px", background: "#222" }}
                     />
                   ) : (
-                    <Image src="/globe.svg" alt="Main Camera" fill style={{objectFit:'cover', opacity:0.7}} />
+                    <Image
+                      src="/globe.svg"
+                      alt="Main Camera"
+                      fill
+                      style={{ objectFit: "cover", opacity: 0.7 }}
+                    />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-gray-900/40"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <CameraIcon size={48} className="mx-auto mb-4 text-gray-400" />
-                      <div className="text-4xl font-bold text-white mb-2">MANDATORY</div>
-                      <div className="text-lg text-gray-300">Live Feed - {activeCamera}</div>
+                      <CameraIcon
+                        size={48}
+                        className="mx-auto mb-4 text-gray-400"
+                      />
+                      <div className="text-4xl font-bold text-white mb-2">
+                        MANDATORY
+                      </div>
+                      <div className="text-lg text-gray-300">
+                        Live Feed - {activeCamera}
+                      </div>
                     </div>
                   </div>
                   {/* Camera Label */}
@@ -355,20 +442,35 @@ const SecurityDashboard = () => {
                 </div>
                 {/* Mini Camera Strip */}
                 <div className="flex gap-3 mb-4">
-                  {cameras.filter(cam => cam.name !== activeCamera).slice(0,2).map((camera) => (
-                    <div key={camera.id} className="relative w-24 h-16 rounded overflow-hidden border-2 border-gray-700">
-                      <Image src="/vercel.svg" alt={camera.name} fill style={{objectFit:'cover', opacity:0.8}} />
-                      <div className="absolute bottom-1 left-1 bg-black/70 px-2 py-0.5 rounded text-xs">{camera.name}</div>
-                    </div>
-                  ))}
+                  {cameras
+                    .filter((cam) => cam.name !== activeCamera)
+                    .slice(0, 2)
+                    .map((camera) => (
+                      <div
+                        key={camera.id}
+                        className="relative w-24 h-16 rounded overflow-hidden border-2 border-gray-700"
+                      >
+                        <Image
+                          src="/vercel.svg"
+                          alt={camera.name}
+                          fill
+                          style={{ objectFit: "cover", opacity: 0.8 }}
+                        />
+                        <div className="absolute bottom-1 left-1 bg-black/70 px-2 py-0.5 rounded text-xs">
+                          {camera.name}
+                        </div>
+                      </div>
+                    ))}
                 </div>
                 {/* Camera Grid */}
                 <div className="grid grid-cols-4 gap-3">
                   {cameras.map((camera) => (
-                    <div 
+                    <div
                       key={camera.id}
                       className={`bg-gray-700 rounded-lg aspect-video relative cursor-pointer transition-all duration-200 ${
-                        activeCamera === camera.name ? 'ring-2 ring-blue-500' : 'hover:bg-gray-600'
+                        activeCamera === camera.name
+                          ? "ring-2 ring-blue-500"
+                          : "hover:bg-gray-600"
                       }`}
                       onClick={() => setActiveCamera(camera.name)}
                     >
@@ -377,7 +479,13 @@ const SecurityDashboard = () => {
                         {camera.name}
                       </div>
                       <div className="absolute top-2 right-2">
-                        <div className={`w-2 h-2 rounded-full ${camera.status === 'active' ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            camera.status === "active"
+                              ? "bg-green-400"
+                              : "bg-red-400"
+                          }`}
+                        ></div>
                       </div>
                     </div>
                   ))}
@@ -427,7 +535,10 @@ const SecurityDashboard = () => {
               ))}
             </div>
             <div className="mt-8">
-              <h3 className="text-md font-semibold mb-2 text-green-400 flex items-center"><CheckCircle size={16} className="mr-1" />Resolved</h3>
+              <h3 className="text-md font-semibold mb-2 text-green-400 flex items-center">
+                <CheckCircle size={16} className="mr-1" />
+                Resolved
+              </h3>
               <div className="space-y-3">
                 {resolvedIncidents.map((incident) => (
                   <IncidentCard key={incident.id} incident={incident} />
@@ -441,7 +552,9 @@ const SecurityDashboard = () => {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-300">Active Cameras</span>
-                <span className="text-green-400 font-semibold">{cameras.length}/{cameras.length}</span>
+                <span className="text-green-400 font-semibold">
+                  {cameras.length}/{cameras.length}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-300">System Health</span>
@@ -464,4 +577,3 @@ const SecurityDashboard = () => {
 };
 
 export default SecurityDashboard;
-
